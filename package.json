@@ -1,0 +1,12 @@
+{
+  "name": "threat-landscape-search",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OSINT desk research tool for cybersecurity threat intelligence",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+  }
+}

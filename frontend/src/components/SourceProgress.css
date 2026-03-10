@@ -1,0 +1,102 @@
+.source-progress {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.source-card {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: border-color 0.2s;
+}
+
+.source-card.source-searching {
+  border-color: var(--warning);
+}
+
+.source-card.source-done {
+  border-color: var(--success);
+}
+
+.source-card.source-failed {
+  border-color: var(--danger);
+}
+
+.source-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-icon {
+  font-size: 16px;
+}
+
+.source-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.badge-searching {
+  background: rgba(210, 153, 34, 0.15);
+  color: var(--warning);
+}
+
+.badge-done {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--success);
+}
+
+.badge-failed {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--danger);
+}
+
+.badge-idle {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.badge-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(210, 153, 34, 0.3);
+  border-top-color: var(--warning);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.source-note {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.source-error {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--danger);
+}

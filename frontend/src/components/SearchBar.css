@@ -1,0 +1,122 @@
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  align-items: stretch;
+}
+
+.search-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:disabled {
+  opacity: 0.6;
+}
+
+.market-select {
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  min-width: 130px;
+  transition: border-color 0.15s;
+}
+
+.market-select:focus {
+  border-color: var(--accent);
+}
+
+.market-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.search-btn {
+  padding: 10px 20px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: #0d1117;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.search-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top-color: #0d1117;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .search-bar {
+    flex-wrap: wrap;
+  }
+  .search-input-wrap {
+    flex: 1 1 100%;
+  }
+  .market-select {
+    flex: 1;
+  }
+  .search-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
