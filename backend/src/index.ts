@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { searchReddit } from './sources/reddit';
 import { searchGoogle } from './sources/google';
 import { searchTelegram } from './sources/telegram';
@@ -49,7 +50,7 @@ app.get('/api/search', async (req, res) => {
   const [redditResult, googleResult, telegramResult] = await Promise.allSettled([
     searchReddit(query, market),
     searchGoogle(query, market),
-    searchTelegram(query),
+    searchTelegram(query, market),
   ]);
 
   // Process Reddit
@@ -129,6 +130,14 @@ app.get('/api/search', async (req, res) => {
 
   send('done', response);
   res.end();
+});
+
+// Serve built frontend in production
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+// Catch-all: serve index.html for client-side routing
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
 app.listen(PORT, () => {
