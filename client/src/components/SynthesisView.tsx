@@ -1,5 +1,8 @@
+import { useCallback } from 'react';
 import type { SynthesisReport, SynthesisItem } from '../../../shared/searchTypes';
-import { ExternalLink, AlertTriangle, Info } from 'lucide-react';
+import { ExternalLink, AlertTriangle, Info, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 type Props = {
   synthesis: SynthesisReport;
@@ -7,11 +10,9 @@ type Props = {
 
 function RatingBadge({ rating }: { rating: number }) {
   const colors: Record<number, string> = {
-    5: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    4: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    3: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    2: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    1: 'bg-red-500/20 text-red-400 border-red-500/30',
+    5: 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50',
+    4: 'bg-blue-900/40 text-blue-300 border-blue-700/50',
+    3: 'bg-amber-900/40 text-amber-300 border-amber-700/50',
   };
   return (
     <span className={`text-[10px] font-bold border rounded px-1.5 py-0.5 ${colors[rating] || colors[3]}`}>
@@ -22,44 +23,50 @@ function RatingBadge({ rating }: { rating: number }) {
 
 function SourceTable({ items }: { items: SynthesisItem[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-md border border-border/40">
       <table className="w-full text-xs border-collapse">
         <thead>
-          <tr className="border-b border-border/50">
-            <th className="text-left py-2 pr-2 text-muted-foreground font-semibold uppercase tracking-wider w-[180px]">Source</th>
-            <th className="text-left py-2 pr-2 text-muted-foreground font-semibold uppercase tracking-wider">What they found</th>
-            <th className="text-left py-2 pr-2 text-muted-foreground font-semibold uppercase tracking-wider w-[200px]">Key quote</th>
-            <th className="text-left py-2 pr-2 text-muted-foreground font-semibold uppercase tracking-wider w-[180px]">Why trust this?</th>
-            <th className="text-center py-2 text-muted-foreground font-semibold uppercase tracking-wider w-[50px]">Rating</th>
+          <tr className="bg-muted/50">
+            <th className="text-left py-2.5 px-3 text-muted-foreground font-semibold uppercase tracking-wider text-[10px] w-[200px]">Source</th>
+            <th className="text-left py-2.5 px-3 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">What they found</th>
+            <th className="text-left py-2.5 px-3 text-muted-foreground font-semibold uppercase tracking-wider text-[10px] w-[220px]">Key finding</th>
+            <th className="text-left py-2.5 px-3 text-muted-foreground font-semibold uppercase tracking-wider text-[10px] w-[160px]">Credibility</th>
+            <th className="text-center py-2.5 px-3 text-muted-foreground font-semibold uppercase tracking-wider text-[10px] w-[50px]">Trust</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, j) => (
-            <tr key={j} className="border-b border-border/20 last:border-b-0">
-              <td className="py-2 pr-2 align-top">
+            <tr key={j} className="border-t border-border/20 hover:bg-muted/20 transition-colors">
+              <td className="py-2.5 px-3 align-top">
                 <a
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                  className="text-primary hover:underline font-medium inline-flex items-start gap-1 leading-snug"
                 >
-                  {item.title}
-                  <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+                  <span className="line-clamp-2">{item.title}</span>
+                  <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 mt-0.5 opacity-60" />
                 </a>
-                <span className="block mt-0.5 bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] uppercase font-mono w-fit">
+                <span className="block mt-1 text-[10px] uppercase font-mono text-muted-foreground/60 tracking-wider">
                   {item.source}
                 </span>
               </td>
-              <td className="py-2 pr-2 align-top text-muted-foreground leading-relaxed">
+              <td className="py-2.5 px-3 align-top text-foreground/80 leading-relaxed">
                 {item.detail}
               </td>
-              <td className="py-2 pr-2 align-top text-muted-foreground italic leading-relaxed">
-                {item.key_quote ? `"${item.key_quote}"` : '—'}
+              <td className="py-2.5 px-3 align-top">
+                {item.key_quote ? (
+                  <span className="text-amber-300/80 leading-relaxed text-[11px] block">
+                    "{item.key_quote}"
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/40">—</span>
+                )}
               </td>
-              <td className="py-2 pr-2 align-top text-muted-foreground/80 leading-relaxed">
+              <td className="py-2.5 px-3 align-top text-muted-foreground/70 leading-relaxed">
                 {item.trust_justification || '—'}
               </td>
-              <td className="py-2 align-top text-center">
+              <td className="py-2.5 px-3 align-top text-center">
                 <RatingBadge rating={item.reliability_rating} />
               </td>
             </tr>
@@ -70,29 +77,94 @@ function SourceTable({ items }: { items: SynthesisItem[] }) {
   );
 }
 
+function CopyButton({ getText }: { getText: () => string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(getText());
+      setCopied(true);
+      toast.success('Copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy');
+    }
+  }, [getText]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-primary border border-border/50 rounded px-2.5 py-1.5 hover:bg-primary/5 transition-colors"
+    >
+      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+      {copied ? 'Copied' : 'Copy report'}
+    </button>
+  );
+}
+
+function synthesisToText(synthesis: SynthesisReport): string {
+  let text = `WATSON'S REPORT\n${'='.repeat(50)}\n\n`;
+  text += `${synthesis.overview}\n\n`;
+
+  for (const cat of synthesis.categories) {
+    text += `--- ${cat.name.toUpperCase()} ---\n`;
+    text += `${cat.summary}\n\n`;
+    for (const item of cat.items) {
+      text += `  [${item.reliability_rating}/5] ${item.title}\n`;
+      text += `  ${item.url}\n`;
+      text += `  ${item.detail}\n`;
+      if (item.key_quote) text += `  Key finding: "${item.key_quote}"\n`;
+      if (item.trust_justification) text += `  Credibility: ${item.trust_justification}\n`;
+      text += '\n';
+    }
+  }
+
+  if (synthesis.confidence_notes.length > 0) {
+    text += `--- CONFIDENCE NOTES ---\n`;
+    for (const note of synthesis.confidence_notes) {
+      text += `  - ${note}\n`;
+    }
+    text += '\n';
+  }
+
+  if (synthesis.gaps.length > 0) {
+    text += `--- GAPS & MANUAL FOLLOW-UP ---\n`;
+    for (const gap of synthesis.gaps) {
+      text += `  - ${gap}\n`;
+    }
+  }
+
+  return text;
+}
+
 export function SynthesisView({ synthesis }: Props) {
   return (
-    <div className="rounded-lg border border-primary/20 bg-card/60 mb-6 overflow-hidden">
+    <div className="rounded-lg border border-border/40 bg-card/80 mb-6 overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border/50 bg-primary/5 px-4 py-3">
-        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-          <span>🔍</span> Watson's Report
-        </h2>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
-          Sherlock's field researcher — diligent, thorough, flags uncertainty
-        </p>
+      <div className="border-b border-border/40 bg-muted/30 px-5 py-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+            Watson's Report
+          </h2>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Threat intelligence research — diligent, thorough, flags uncertainty
+          </p>
+        </div>
+        <CopyButton getText={() => synthesisToText(synthesis)} />
       </div>
 
       {/* Overview */}
-      <div className="px-4 py-3 border-b border-border/30 border-l-2 border-l-primary mx-4 mt-4 mb-4 bg-muted/30 rounded-r-md">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {synthesis.overview}
-        </p>
+      <div className="px-5 py-4 border-b border-border/30">
+        <div className="border-l-2 border-l-primary pl-4 py-1">
+          <p className="text-sm text-foreground/90 leading-relaxed">
+            {synthesis.overview}
+          </p>
+        </div>
       </div>
 
       {/* Source tables by type */}
       {synthesis.categories.map((cat, i) => (
-        <div key={i} className="px-4 py-3 border-b border-border/20 last:border-b-0">
+        <div key={i} className="px-5 py-4 border-b border-border/20 last:border-b-0">
           <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-1.5">
             {cat.name}
           </h3>
@@ -105,14 +177,14 @@ export function SynthesisView({ synthesis }: Props) {
 
       {/* Confidence Notes */}
       {synthesis.confidence_notes && synthesis.confidence_notes.length > 0 && (
-        <div className="px-4 py-3 bg-blue-500/5 border-t border-blue-500/20">
+        <div className="px-5 py-4 bg-blue-950/20 border-t border-blue-900/30">
           <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2 mb-2">
             <Info className="w-3.5 h-3.5 text-blue-400" />
             Confidence Notes
           </h3>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {synthesis.confidence_notes.map((note, i) => (
-              <li key={i} className="text-xs text-blue-400/80 flex items-start gap-2">
+              <li key={i} className="text-xs text-blue-300/70 flex items-start gap-2 leading-relaxed">
                 <span className="text-blue-400 mt-0.5">•</span>
                 {note}
               </li>
@@ -123,15 +195,15 @@ export function SynthesisView({ synthesis }: Props) {
 
       {/* Gaps */}
       {synthesis.gaps.length > 0 && (
-        <div className="px-4 py-3 bg-yellow-500/5 border-t border-yellow-500/20">
+        <div className="px-5 py-4 bg-amber-950/20 border-t border-amber-900/30">
           <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />
-            Gaps &amp; Manual Follow-up
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            Gaps & Manual Follow-up
           </h3>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {synthesis.gaps.map((gap, i) => (
-              <li key={i} className="text-xs text-yellow-500/80 flex items-start gap-2">
-                <span className="text-yellow-500 mt-0.5">•</span>
+              <li key={i} className="text-xs text-amber-300/70 flex items-start gap-2 leading-relaxed">
+                <span className="text-amber-400 mt-0.5">•</span>
                 {gap}
               </li>
             ))}

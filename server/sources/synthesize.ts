@@ -27,6 +27,9 @@ export async function synthesizeResults(
     }
   });
 
+  // Extract search keywords for Reddit relevance filtering
+  const searchKeywords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
   const prompt = `You are Watson — a diligent, thorough field researcher supporting a UX researcher investigating cybersecurity threats. You are methodical and always flag uncertainty. A researcher searched for "${query}" across Reddit, Google, Facebook Groups, and Telegram.
 
 Here are the ${summaries.length} results found:
@@ -46,7 +49,7 @@ Synthesize these into a structured evidence-grade research report. Return ONLY v
         "url": "actual URL from the results",
         "source": "reddit|google|facebook|telegram",
         "detail": "What this source found, in plain English (1-2 sentences). Use format: 'This source describes how bad actors could...' or 'Documents a phishing service that...'",
-        "key_quote": "Direct quote or specific data point from the source. Use exact numbers, prices, or phrases where available.",
+        "key_quote": "Direct quote or specific data point from the source. Must be an actual finding, statistic, or insight — NOT the article title or first sentence. Include specific numbers, prices, dates, actor names, or tool names where available.",
         "trust_justification": "One sentence explaining why this source is credible. E.g. 'Tier-1 security vendor with published IOCs' or 'Practitioner report with first-hand experience'",
         "reliability_rating": 4
       }]
@@ -80,7 +83,7 @@ Reliability rating scale:
 - 5/5: Peer-reviewed, tier-1 vendor, major security conference, law enforcement action
 - 4/5: Established vendor with published technical analysis, independently verifiable
 - 3/5: Active GitHub project (100-1K stars), trade press, verified practitioner report
-- 2/5: Anecdotal discussion, vendor blog with promotional angle, unverified claims
+- 2/5: Anecdotal discussion, vendor blog with promotional angle, unverifiable claims
 - 1/5: Anonymous post, no citations, unverifiable
 
 Rules:
@@ -91,7 +94,14 @@ Rules:
 - Don't over-infer. Say what each source actually claims, not what you think it means.
 - Every item needs a key_quote (direct quote or specific data point) and trust_justification.
 - confidence_notes should flag: which source types had thin coverage, whether claims are corroborated across sources, any results that seem unreliable.
-- Return valid JSON only, no markdown wrapping.`;
+- Return valid JSON only, no markdown wrapping.
+
+CRITICAL quality rules:
+1. REDDIT FILTERING: Only include Reddit posts where the title or snippet directly mentions at least 2 of these search keywords: [${searchKeywords.join(', ')}]. Generic cybersecurity news, unrelated vulnerability reports, career advice, and AI/ML discussions that don't specifically address the search topic MUST be excluded. When in doubt, leave it out. Maximum 5 Reddit items.
+2. EXTRACT STRUCTURED DATA: When a source mentions specific prices, subscription costs, tool names, actor names/handles, dates, or marketplace channels — extract and include them in the key_quote field. Do NOT use the article title as the key quote. A good key_quote contains a specific data point: "$200/month via Telegram", "12K GitHub stars", "seized March 2026", "$74.50 average on dark web."
+3. DROP LOW-VALUE SOURCES: Do NOT include any result you would rate 1/5 or 2/5. Only include sources rated 3/5 or higher. Quality over quantity.
+4. CAP PER CATEGORY: Maximum 10 items per category. Rank by reliability rating and relevance, keep the best.
+5. DEDUPLICATE: If two sources report the same finding (e.g. same tool, same incident), keep only the higher-rated source. Mention the corroboration in the detail field instead.`;
 
   try {
     const response = await invokeLLM({
