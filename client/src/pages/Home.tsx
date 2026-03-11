@@ -31,7 +31,7 @@ export default function Home() {
     const a = document.createElement('a');
     a.href = url;
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    a.download = `threat-search-${ts}.json`;
+    a.download = `watson-report-${ts}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Export downloaded');
@@ -56,10 +56,10 @@ export default function Home() {
               <Shield className="w-4 h-4 text-primary" />
             </div>
             <span className="font-semibold text-sm tracking-wide text-foreground">
-              THREAT<span className="text-primary">SEARCH</span>
+              WAT<span className="text-primary">SON</span>
             </span>
             <span className="hidden sm:inline text-xs text-muted-foreground border border-border/50 rounded px-1.5 py-0.5">
-              OSINT
+              Sherlock's Field Researcher
             </span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -74,10 +74,10 @@ export default function Home() {
         <div className="container py-10 md:py-14">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2 tracking-tight">
-              Threat Landscape Search
+              Watson
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter a short query — the tool expands it, searches 4 sources in parallel, and synthesises findings.
+              Sherlock's field researcher. Enter a query — Watson expands it, searches 4 sources in parallel, and produces evidence-grade findings with reliability ratings.
             </p>
           </div>
           <SearchBar
@@ -179,7 +179,7 @@ export default function Home() {
               <Shield className="w-8 h-8 text-primary/40" />
             </div>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Enter a short query above — the tool expands it into multiple search variants and searches Reddit, Google, Facebook Groups &amp; Telegram in parallel.
+              Enter a query above — Watson expands it into search variants and searches Reddit, Google, Facebook Groups &amp; Telegram in parallel, producing evidence-grade results with source reliability ratings.
             </p>
             <p className="text-xs text-muted-foreground/50 mt-2">
               Try: "2fa bypass", "passkey phishing", "cookie stealer malware"
@@ -191,7 +191,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border/30 py-4">
         <div className="container text-center text-xs text-muted-foreground/50">
-          Threat Landscape Search · OSINT aggregation tool · For security research purposes only
+          Watson · Sherlock's field researcher · For security research purposes only
         </div>
       </footer>
     </div>

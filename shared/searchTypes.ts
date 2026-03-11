@@ -54,6 +54,9 @@ export type SynthesisItem = {
   url: string;
   source: string;
   detail: string;
+  key_quote: string;
+  trust_justification: string;
+  reliability_rating: number; // 1-5
 };
 
 export type SynthesisCategory = {
@@ -66,6 +69,7 @@ export type SynthesisReport = {
   overview: string;
   categories: SynthesisCategory[];
   gaps: string[];
+  confidence_notes: string[];
 };
 
 export type SearchMetadata = {
