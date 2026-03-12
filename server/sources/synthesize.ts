@@ -8,22 +8,23 @@ export async function synthesizeResults(
   if (results.length === 0) {
     return {
       overview: 'No results found for this query.',
+      key_insights: [],
       categories: [],
       gaps: ['No results returned from any source. Try broadening your search terms.'],
       confidence_notes: [],
     };
   }
 
-  // Build compact summaries for the LLM (cap at 60 results)
-  const summaries = results.slice(0, 60).map((r) => {
+  // Build compact summaries WITH URLs so the LLM can reference them exactly
+  const summaries = results.slice(0, 60).map((r, idx) => {
     if (r.source === 'reddit') {
-      return `[Reddit] "${r.title}" (r/${r.subreddit}, score:${r.score}) — ${r.snippet.slice(0, 150)}`;
+      return `[${idx}][Reddit] "${r.title}" r/${r.subreddit} score:${r.score} URL:${r.url} — ${r.snippet.slice(0, 200)}`;
     } else if (r.source === 'google') {
-      return `[Google] "${r.title}" (${r.domain}) — ${r.snippet.slice(0, 150)}`;
+      return `[${idx}][Google] "${r.title}" ${r.domain} URL:${r.url} — ${r.snippet.slice(0, 200)}`;
     } else if (r.source === 'facebook') {
-      return `[Facebook] "${r.title}" (${r.group_name}) — ${r.snippet.slice(0, 150)}`;
+      return `[${idx}][Facebook] "${r.title}" ${r.group_name} URL:${r.url} — ${r.snippet.slice(0, 200)}`;
     } else {
-      return `[Telegram] "${r.channel_name}" (${r.channel_url}) — ${r.snippet.slice(0, 150)}`;
+      return `[${idx}][Telegram] "${r.channel_name}" URL:${r.channel_url} — ${r.snippet.slice(0, 200)}`;
     }
   });
 
@@ -32,76 +33,79 @@ export async function synthesizeResults(
 
   const prompt = `You are Watson — a diligent, thorough field researcher supporting a UX researcher investigating cybersecurity threats. You are methodical and always flag uncertainty. A researcher searched for "${query}" across Reddit, Google, Facebook Groups, and Telegram.
 
-Here are the ${summaries.length} results found:
+Here are the ${summaries.length} results found (each prefixed with an index number and URL):
 
 ${summaries.join('\n')}
 
 Synthesize these into a structured evidence-grade research report. Return ONLY valid JSON with this exact structure:
 
 {
-  "overview": "2-3 sentence executive summary in plain English. Describe what was found, how immediate the risks are, and what's missing. Be conservative — only state what the evidence supports. Bold the single most important finding using **double asterisks**.",
+  "overview": "2-3 sentence executive summary in plain English. What did we find? How immediate are the risks? What's missing?",
+  "key_insights": [
+    "**Technical concept in bold** — plain English explanation of what was found, referencing specific evidence. E.g.: '**Phishing kits (AiTM/adversary-in-the-middle)** are the most documented bypass method — 5 vendor reports confirm attackers relay login sessions in real-time, defeating SMS and TOTP-based 2FA'",
+    "..."
+  ],
   "categories": [
     {
-      "name": "Security Vendor & Research Reports",
-      "summary": "1-2 sentence summary of vendor/research findings",
+      "name": "Category Name",
+      "summary": "1-2 sentence summary of what this category of sources reveals",
       "items": [{
         "title": "Short descriptive title",
-        "url": "actual URL from the results",
+        "url": "MUST be copied exactly from the URL: field in the results above — never fabricate or guess a URL",
         "source": "reddit|google|facebook|telegram",
-        "detail": "What this source found, in plain English (1-2 sentences). Use format: 'This source describes how bad actors could...' or 'Documents a phishing service that...'",
-        "key_quote": "Direct quote or specific data point from the source. Must be an actual finding, statistic, or insight — NOT the article title or first sentence. Include specific numbers, prices, dates, actor names, or tool names where available.",
-        "trust_justification": "One sentence explaining why this source is credible. E.g. 'Tier-1 security vendor with published IOCs' or 'Practitioner report with first-hand experience'",
+        "detail": "2-3 sentences. What does this source specifically claim or document? Name the technique, tool, or service. Include any numbers, dates, or named actors. Do NOT just rephrase the article title.",
+        "key_quote": "A specific data point from the snippet: a price, a date, a tool name, a statistic, an actor handle. NOT the article title or meta description.",
+        "trust_justification": "One sentence: why trust this source?",
         "reliability_rating": 4
       }]
-    },
-    {
-      "name": "Open-Source Tools (GitHub)",
-      "summary": "...",
-      "items": [...]
-    },
-    {
-      "name": "Reddit Community Discussions",
-      "summary": "...",
-      "items": [...]
-    },
-    {
-      "name": "Telegram Channel Documentation",
-      "summary": "...",
-      "items": [...]
-    },
-    {
-      "name": "Facebook Group Activity",
-      "summary": "...",
-      "items": [...]
     }
   ],
-  "gaps": ["What wasn't found that needs manual investigation (2-4 bullet points)"],
-  "confidence_notes": ["Caveats about the evidence quality, coverage gaps, or areas where Watson is uncertain (2-3 bullet points)"]
+  "gaps": ["What wasn't found — 2-4 specific areas needing manual investigation"],
+  "confidence_notes": ["Caveats about evidence quality, coverage, or uncertainty — 2-3 points"]
 }
 
+KEY INSIGHTS RULES:
+- Exactly 5 insights, ranked by importance
+- Each insight starts with the key technical concept in **bold** (include the technical term in parentheses)
+- Follow with a plain English explanation a non-technical reader can understand
+- Reference how many sources support the claim, or cite specific data points
+- Insights should synthesise ACROSS sources, not just summarise one source each
+- If fewer than 5 distinct insights exist, include what you have and note thin coverage
+
+CATEGORY RULES:
+- Group by source TYPE: Security Vendor & Research Reports, Open-Source Tools (GitHub), Reddit Community Discussions, Telegram Channel Documentation, Facebook Group Activity
+- Only include categories that have matching results. Skip empty ones.
+- Maximum 8 items per category. Rank by reliability + relevance, keep the best.
+
+URL RULES — CRITICAL:
+- Every item's "url" field MUST be copied character-for-character from the "URL:" field in the numbered results above
+- NEVER construct, guess, or modify a URL. If you cannot find the exact URL in the results, omit the item entirely
+- Cross-check: the domain in your url must match the domain shown in the result entry
+
+DETAIL RULES:
+- Do NOT just rephrase the article title. Say what the source specifically claims.
+- Name specific techniques, tools, services, or actors mentioned in the snippet
+- If the snippet mentions a price, date, tool name, or actor — include it
+- Use plain English first, then give the technical term: "attackers relay login sessions in real-time (adversary-in-the-middle / AiTM)"
+
+KEY QUOTE RULES:
+- Must be a specific, concrete data point — a price, a statistic, a tool name, an actor, a date
+- NOT the article title, NOT a generic description, NOT the first sentence of the snippet
+- If no specific data point exists in the snippet, use the most informative technical claim
+
+QUALITY FILTERS:
+1. REDDIT FILTERING: Only include Reddit posts where the title or snippet directly mentions at least 2 of these search keywords: [${searchKeywords.join(', ')}]. Exclude generic cybersecurity news, career advice, and unrelated discussions. Maximum 5 Reddit items.
+2. DROP LOW-VALUE: Do NOT include sources you would rate 1/5 or 2/5. Quality over quantity.
+3. DEDUPLICATE: If two sources report the same finding, keep only the higher-rated one. Mention corroboration in the detail field.
+
 Reliability rating scale:
-- 5/5: Peer-reviewed, tier-1 vendor, major security conference, law enforcement action
-- 4/5: Established vendor with published technical analysis, independently verifiable
-- 3/5: Active GitHub project (100-1K stars), trade press, verified practitioner report
-- 2/5: Anecdotal discussion, vendor blog with promotional angle, unverifiable claims
-- 1/5: Anonymous post, no citations, unverifiable
+- 5/5: Peer-reviewed, tier-1 vendor, major security conference, law enforcement
+- 4/5: Established vendor with published analysis, independently verifiable
+- 3/5: Active GitHub project (100+ stars), trade press, verified practitioner
+- 2/5: Anecdotal discussion, promotional vendor blog — EXCLUDE
+- 1/5: Anonymous, no citations — EXCLUDE
 
-Rules:
-- Group results by source TYPE (vendor reports, GitHub tools, Reddit, Telegram, Facebook), not by topic category.
-- Only include source type groups that have actual matching results. Skip empty groups.
-- Each item must reference a real result from the list above with its actual URL.
-- Plain English first — describe what happens in everyday language, then give technical terms in parentheses.
-- Don't over-infer. Say what each source actually claims, not what you think it means.
-- Every item needs a key_quote (direct quote or specific data point) and trust_justification.
-- confidence_notes should flag: which source types had thin coverage, whether claims are corroborated across sources, any results that seem unreliable.
-- Return valid JSON only, no markdown wrapping.
-
-CRITICAL quality rules:
-1. REDDIT FILTERING: Only include Reddit posts where the title or snippet directly mentions at least 2 of these search keywords: [${searchKeywords.join(', ')}]. Generic cybersecurity news, unrelated vulnerability reports, career advice, and AI/ML discussions that don't specifically address the search topic MUST be excluded. When in doubt, leave it out. Maximum 5 Reddit items.
-2. EXTRACT STRUCTURED DATA: When a source mentions specific prices, subscription costs, tool names, actor names/handles, dates, or marketplace channels — extract and include them in the key_quote field. Do NOT use the article title as the key quote. A good key_quote contains a specific data point: "$200/month via Telegram", "12K GitHub stars", "seized March 2026", "$74.50 average on dark web."
-3. DROP LOW-VALUE SOURCES: Do NOT include any result you would rate 1/5 or 2/5. Only include sources rated 3/5 or higher. Quality over quantity.
-4. CAP PER CATEGORY: Maximum 10 items per category. Rank by reliability rating and relevance, keep the best.
-5. DEDUPLICATE: If two sources report the same finding (e.g. same tool, same incident), keep only the higher-rated source. Mention the corroboration in the detail field instead.`;
+Return valid JSON only, no markdown wrapping.`;
 
   try {
     const response = await invokeLLM({
@@ -113,12 +117,12 @@ CRITICAL quality rules:
     const content = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
     const parsed = JSON.parse(content);
 
-    // Handle both direct object and wrapped formats
-    const data = parsed.results ? parsed : parsed;
-
     return {
-      overview: String(data.overview || ''),
-      categories: (data.categories || []).map(
+      overview: String(parsed.overview || ''),
+      key_insights: Array.isArray(parsed.key_insights)
+        ? parsed.key_insights.map(String)
+        : [],
+      categories: (parsed.categories || []).map(
         (c: Record<string, unknown>) => ({
           name: String(c.name || ''),
           summary: String(c.summary || ''),
@@ -135,13 +139,14 @@ CRITICAL quality rules:
             : [],
         })
       ),
-      gaps: Array.isArray(data.gaps) ? data.gaps.map(String) : [],
-      confidence_notes: Array.isArray(data.confidence_notes) ? data.confidence_notes.map(String) : [],
+      gaps: Array.isArray(parsed.gaps) ? parsed.gaps.map(String) : [],
+      confidence_notes: Array.isArray(parsed.confidence_notes) ? parsed.confidence_notes.map(String) : [],
     };
   } catch (err) {
     console.error('Synthesis failed:', err);
     return {
       overview: `Found ${results.length} results for "${query}" but synthesis failed. Review raw results below.`,
+      key_insights: [],
       categories: [],
       gaps: ['Automated synthesis unavailable — review raw results manually.'],
       confidence_notes: ['Synthesis failed — raw results may still contain useful intelligence.'],

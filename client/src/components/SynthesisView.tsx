@@ -1,12 +1,23 @@
 import { useCallback } from 'react';
 import type { SynthesisReport, SynthesisItem } from '../../../shared/searchTypes';
-import { ExternalLink, AlertTriangle, Info, Copy, Check } from 'lucide-react';
+import { ExternalLink, AlertTriangle, Info, Copy, Check, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 type Props = {
   synthesis: SynthesisReport;
 };
+
+/** Parse **bold** markers into React elements */
+function renderBold(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-foreground">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
 
 function RatingBadge({ rating }: { rating: number }) {
   const colors: Record<number, string> = {
@@ -57,10 +68,10 @@ function SourceTable({ items }: { items: SynthesisItem[] }) {
               <td className="py-2.5 px-3 align-top">
                 {item.key_quote ? (
                   <span className="text-amber-300/80 leading-relaxed text-[11px] block">
-                    "{item.key_quote}"
+                    &ldquo;{item.key_quote}&rdquo;
                   </span>
                 ) : (
-                  <span className="text-muted-foreground/40">—</span>
+                  <span className="text-muted-foreground/40">&mdash;</span>
                 )}
               </td>
               <td className="py-2.5 px-3 align-top text-muted-foreground/70 leading-relaxed">
@@ -106,6 +117,14 @@ function synthesisToText(synthesis: SynthesisReport): string {
   let text = `WATSON'S REPORT\n${'='.repeat(50)}\n\n`;
   text += `${synthesis.overview}\n\n`;
 
+  if (synthesis.key_insights && synthesis.key_insights.length > 0) {
+    text += `--- KEY INSIGHTS ---\n`;
+    for (let i = 0; i < synthesis.key_insights.length; i++) {
+      text += `  ${i + 1}. ${synthesis.key_insights[i]}\n`;
+    }
+    text += '\n';
+  }
+
   for (const cat of synthesis.categories) {
     text += `--- ${cat.name.toUpperCase()} ---\n`;
     text += `${cat.summary}\n\n`;
@@ -119,7 +138,7 @@ function synthesisToText(synthesis: SynthesisReport): string {
     }
   }
 
-  if (synthesis.confidence_notes.length > 0) {
+  if (synthesis.confidence_notes && synthesis.confidence_notes.length > 0) {
     text += `--- CONFIDENCE NOTES ---\n`;
     for (const note of synthesis.confidence_notes) {
       text += `  - ${note}\n`;
@@ -127,7 +146,7 @@ function synthesisToText(synthesis: SynthesisReport): string {
     text += '\n';
   }
 
-  if (synthesis.gaps.length > 0) {
+  if (synthesis.gaps && synthesis.gaps.length > 0) {
     text += `--- GAPS & MANUAL FOLLOW-UP ---\n`;
     for (const gap of synthesis.gaps) {
       text += `  - ${gap}\n`;
@@ -144,7 +163,7 @@ export function SynthesisView({ synthesis }: Props) {
       <div className="border-b border-border/40 bg-muted/30 px-5 py-3 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-            Watson's Report
+            Watson&apos;s Report
           </h2>
           <p className="text-[10px] text-muted-foreground mt-0.5">
             Threat intelligence research — diligent, thorough, flags uncertainty
@@ -161,6 +180,24 @@ export function SynthesisView({ synthesis }: Props) {
           </p>
         </div>
       </div>
+
+      {/* Key Insights */}
+      {synthesis.key_insights && synthesis.key_insights.length > 0 && (
+        <div className="px-5 py-4 border-b border-border/30 bg-primary/[0.03]">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2 mb-3">
+            <Lightbulb className="w-3.5 h-3.5 text-primary" />
+            Key Insights
+          </h3>
+          <ol className="space-y-3">
+            {synthesis.key_insights.map((insight, i) => (
+              <li key={i} className="text-[13px] text-foreground/85 leading-relaxed flex items-start gap-3">
+                <span className="text-primary font-bold text-xs mt-0.5 min-w-[18px] text-right">{i + 1}.</span>
+                <span>{renderBold(insight)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {/* Source tables by type */}
       {synthesis.categories.map((cat, i) => (
@@ -185,7 +222,7 @@ export function SynthesisView({ synthesis }: Props) {
           <ul className="space-y-1.5">
             {synthesis.confidence_notes.map((note, i) => (
               <li key={i} className="text-xs text-blue-300/70 flex items-start gap-2 leading-relaxed">
-                <span className="text-blue-400 mt-0.5">•</span>
+                <span className="text-blue-400 mt-0.5">&bull;</span>
                 {note}
               </li>
             ))}
@@ -194,7 +231,7 @@ export function SynthesisView({ synthesis }: Props) {
       )}
 
       {/* Gaps */}
-      {synthesis.gaps.length > 0 && (
+      {synthesis.gaps && synthesis.gaps.length > 0 && (
         <div className="px-5 py-4 bg-amber-950/20 border-t border-amber-900/30">
           <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2 mb-2">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
@@ -203,7 +240,7 @@ export function SynthesisView({ synthesis }: Props) {
           <ul className="space-y-1.5">
             {synthesis.gaps.map((gap, i) => (
               <li key={i} className="text-xs text-amber-300/70 flex items-start gap-2 leading-relaxed">
-                <span className="text-amber-400 mt-0.5">•</span>
+                <span className="text-amber-400 mt-0.5">&bull;</span>
                 {gap}
               </li>
             ))}

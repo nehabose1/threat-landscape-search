@@ -67,6 +67,7 @@ export type SynthesisCategory = {
 
 export type SynthesisReport = {
   overview: string;
+  key_insights: string[];
   categories: SynthesisCategory[];
   gaps: string[];
   confidence_notes: string[];

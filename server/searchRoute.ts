@@ -4,8 +4,9 @@ import { searchGoogle } from './sources/google';
 import { searchFacebook } from './sources/facebook';
 import { searchTelegram } from './sources/telegram';
 import { synthesizeResults } from './sources/synthesize';
+import { getDeadUrls } from './urlValidator';
 import { expandQuery } from './marketKeywords';
-import type { Market, SearchResult, SearchMetadata } from '../shared/searchTypes';
+import type { Market, SearchResult, SearchMetadata, RedditResult, GoogleResult, FacebookResult, TelegramResult } from '../shared/searchTypes';
 
 /**
  * Registers GET /api/search as an SSE endpoint.
@@ -48,7 +49,6 @@ export function registerSearchRoute(app: Express) {
 
     const succeeded: string[] = [];
     const failed: string[] = [];
-    const allResults: SearchResult[] = [];
 
     // Step 2: Run all four sources in parallel
     const [redditSettled, googleSettled, facebookSettled, telegramSettled] =
@@ -59,55 +59,90 @@ export function registerSearchRoute(app: Express) {
         searchTelegram(query, market),
       ]);
 
-    // Reddit
+    // Collect raw results
+    let redditResults: RedditResult[] =
+      redditSettled.status === 'fulfilled' ? redditSettled.value : [];
+    let googleResults: GoogleResult[] =
+      googleSettled.status === 'fulfilled' ? googleSettled.value : [];
+    let facebookResults: FacebookResult[] =
+      facebookSettled.status === 'fulfilled' ? facebookSettled.value : [];
+    let telegramResults: TelegramResult[] =
+      telegramSettled.status === 'fulfilled' ? telegramSettled.value : [];
+
+    if (redditSettled.status === 'rejected') failed.push('reddit');
+    if (googleSettled.status === 'rejected') failed.push('google');
+    if (facebookSettled.status === 'rejected') failed.push('facebook');
+    if (telegramSettled.status === 'rejected') failed.push('telegram');
+
+    // Step 3: Validate URLs — exclude dead links (404/410/451)
+    const allUrls: string[] = [
+      ...redditResults.map((r) => r.url),
+      ...googleResults.map((r) => r.url),
+      ...facebookResults.map((r) => r.url),
+      ...telegramResults.map((r) => r.channel_url),
+    ];
+
+    if (allUrls.length > 0) {
+      send('status', { source: 'validation', status: 'checking links' });
+      const deadUrls = await getDeadUrls(allUrls);
+
+      if (deadUrls.size > 0) {
+        redditResults = redditResults.filter((r) => !deadUrls.has(r.url));
+        googleResults = googleResults.filter((r) => !deadUrls.has(r.url));
+        facebookResults = facebookResults.filter((r) => !deadUrls.has(r.url));
+        telegramResults = telegramResults.filter((r) => !deadUrls.has(r.channel_url));
+
+        send('status', {
+          source: 'validation',
+          status: 'done',
+          count: deadUrls.size,
+          message: `Excluded ${deadUrls.size} dead link${deadUrls.size > 1 ? 's' : ''}`,
+        });
+      } else {
+        send('status', { source: 'validation', status: 'done', count: 0 });
+      }
+    }
+
+    // Step 4: Send validated results
+    const allResults: SearchResult[] = [];
+
     if (redditSettled.status === 'fulfilled') {
-      const r = redditSettled.value;
-      allResults.push(...r);
+      allResults.push(...redditResults);
       succeeded.push('reddit');
-      send('status', { source: 'reddit', status: 'done', count: r.length });
-      send('results', { source: 'reddit', results: r });
+      send('status', { source: 'reddit', status: 'done', count: redditResults.length });
+      send('results', { source: 'reddit', results: redditResults });
     } else {
-      failed.push('reddit');
       send('status', { source: 'reddit', status: 'failed', error: String(redditSettled.reason) });
     }
 
-    // Google
     if (googleSettled.status === 'fulfilled') {
-      const r = googleSettled.value;
-      allResults.push(...r);
+      allResults.push(...googleResults);
       succeeded.push('google');
-      send('status', { source: 'google', status: 'done', count: r.length });
-      send('results', { source: 'google', results: r });
+      send('status', { source: 'google', status: 'done', count: googleResults.length });
+      send('results', { source: 'google', results: googleResults });
     } else {
-      failed.push('google');
       send('status', { source: 'google', status: 'failed', error: String(googleSettled.reason) });
     }
 
-    // Facebook
     if (facebookSettled.status === 'fulfilled') {
-      const r = facebookSettled.value;
-      allResults.push(...r);
+      allResults.push(...facebookResults);
       succeeded.push('facebook');
-      send('status', { source: 'facebook', status: 'done', count: r.length });
-      send('results', { source: 'facebook', results: r });
+      send('status', { source: 'facebook', status: 'done', count: facebookResults.length });
+      send('results', { source: 'facebook', results: facebookResults });
     } else {
-      failed.push('facebook');
       send('status', { source: 'facebook', status: 'failed', error: String(facebookSettled.reason) });
     }
 
-    // Telegram
     if (telegramSettled.status === 'fulfilled') {
-      const r = telegramSettled.value;
-      allResults.push(...r);
+      allResults.push(...telegramResults);
       succeeded.push('telegram');
-      send('status', { source: 'telegram', status: 'done', count: r.length });
-      send('results', { source: 'telegram', results: r });
+      send('status', { source: 'telegram', status: 'done', count: telegramResults.length });
+      send('results', { source: 'telegram', results: telegramResults });
     } else {
-      failed.push('telegram');
       send('status', { source: 'telegram', status: 'failed', error: String(telegramSettled.reason) });
     }
 
-    // Step 3: Synthesize results
+    // Step 5: Synthesize results
     send('status', { source: 'synthesis', status: 'searching' });
     let synthesis;
     try {
