@@ -39,7 +39,18 @@ export type TelegramResult = {
   snippet: string;
 };
 
-export type SearchResult = RedditResult | GoogleResult | FacebookResult | TelegramResult;
+export type YouTubeResult = {
+  source: 'youtube';
+  title: string;
+  url: string;
+  channel: string;
+  date: string;
+  snippet: string;
+  transcript_excerpt: string;
+  duration: string;
+};
+
+export type SearchResult = RedditResult | GoogleResult | FacebookResult | TelegramResult | YouTubeResult;
 
 export type SourceStatus = 'idle' | 'searching' | 'done' | 'failed';
 

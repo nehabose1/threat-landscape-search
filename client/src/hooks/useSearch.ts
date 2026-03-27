@@ -63,10 +63,12 @@ export function useSearch() {
   const search = useCallback((query: string, market: Market) => {
     if (!query.trim()) return;
 
+    // Abort any in-flight request
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
+    // Reset state
     setState({
       isSearching: true,
       expandedQueries: [],
@@ -88,6 +90,7 @@ export function useSearch() {
 
     const params = new URLSearchParams({ q: query, market });
     const url = `/api/search?${params.toString()}`;
+
     const eventSource = new EventSource(url);
 
     eventSource.addEventListener('queries', (e: MessageEvent) => {

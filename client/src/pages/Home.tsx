@@ -5,32 +5,10 @@ import { SearchBar } from '@/components/SearchBar';
 import { SourceProgress } from '@/components/SourceProgress';
 import { ResultTabs } from '@/components/ResultTabs';
 import { SynthesisView } from '@/components/SynthesisView';
+import { WatsonLogo } from '@/components/WatsonLogo';
 import { Button } from '@/components/ui/button';
 import { Download, Terminal, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-/* ─── Watson Logo: Deerstalker hat + stethoscope ──────────────────── */
-function WatsonLogo({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
-      {/* Deerstalker hat */}
-      <ellipse cx="20" cy="17" rx="14" ry="4" fill="currentColor" opacity="0.3" />
-      <path d="M8 17c0-5 5.5-9 12-9s12 4 12 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="currentColor" opacity="0.15" />
-      <path d="M6 17h28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Hat brim flaps */}
-      <path d="M8 17c-2 1-3 3-2 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M32 17c2 1 3 3 2 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      {/* Hat band */}
-      <path d="M10 15.5h20" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-      {/* Stethoscope */}
-      <path d="M16 24c0 4-2 7-2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <path d="M24 24c0 4 2 7 2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <path d="M14 34c0 2 2 3 3 3s3-1 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <path d="M23 34c0 2 0 3 1.5 3s2.5-1 2.5-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <circle cx="14" cy="34" r="1.5" fill="currentColor" opacity="0.5" />
-    </svg>
-  );
-}
 
 type ViewTab = 'summary' | 'references';
 

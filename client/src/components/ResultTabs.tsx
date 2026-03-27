@@ -87,24 +87,53 @@ function RedditTable({ results }: { results: RedditResult[] }) {
       </thead>
       <tbody>
         {results.map((r, i) => (
-          <tr key={r.url + i} className="border-b border-border/20 hover:bg-primary/5 transition-colors group">
+          <tr
+            key={r.url + i}
+            className="border-b border-border/20 hover:bg-primary/5 transition-colors group"
+          >
             <td className="px-4 py-2.5 max-w-0">
-              <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors font-medium line-clamp-1 flex items-start gap-1.5">
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground hover:text-primary transition-colors font-medium line-clamp-1 flex items-start gap-1.5"
+              >
                 <span className="flex-1 line-clamp-1">{r.title}</span>
                 <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-60 mt-0.5" />
               </a>
-              {r.snippet && <p className="text-muted-foreground mt-0.5 line-clamp-1">{r.snippet}</p>}
+              {r.snippet && (
+                <p className="text-muted-foreground mt-0.5 line-clamp-1">{r.snippet}</p>
+              )}
               {r.external_url && (
-                <a href={r.external_url} target="_blank" rel="noopener noreferrer" className="text-primary/70 hover:text-primary text-xs mt-0.5 inline-flex items-center gap-1">
+                <a
+                  href={r.external_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary/70 hover:text-primary text-xs mt-0.5 inline-flex items-center gap-1"
+                >
                   <ExternalLink className="w-2.5 h-2.5" />
                   {new URL(r.external_url).hostname.replace('www.', '')}
                 </a>
               )}
             </td>
-            <td className="px-4 py-2.5 whitespace-nowrap"><span className="text-orange-400/80 font-mono">r/{r.subreddit}</span></td>
-            <td className="px-4 py-2.5 text-right whitespace-nowrap"><span className="flex items-center justify-end gap-1 text-muted-foreground"><ArrowUp className="w-3 h-3" />{r.score.toLocaleString()}</span></td>
-            <td className="px-4 py-2.5 text-right whitespace-nowrap"><span className="flex items-center justify-end gap-1 text-muted-foreground"><MessageSquare className="w-3 h-3" />{r.num_comments.toLocaleString()}</span></td>
-            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">{r.date || '—'}</td>
+            <td className="px-4 py-2.5 whitespace-nowrap">
+              <span className="text-orange-400/80 font-mono">r/{r.subreddit}</span>
+            </td>
+            <td className="px-4 py-2.5 text-right whitespace-nowrap">
+              <span className="flex items-center justify-end gap-1 text-muted-foreground">
+                <ArrowUp className="w-3 h-3" />
+                {r.score.toLocaleString()}
+              </span>
+            </td>
+            <td className="px-4 py-2.5 text-right whitespace-nowrap">
+              <span className="flex items-center justify-end gap-1 text-muted-foreground">
+                <MessageSquare className="w-3 h-3" />
+                {r.num_comments.toLocaleString()}
+              </span>
+            </td>
+            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">
+              {r.date || '—'}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -128,16 +157,30 @@ function GoogleTable({ results }: { results: GoogleResult[] }) {
       </thead>
       <tbody>
         {results.map((r, i) => (
-          <tr key={r.url + i} className="border-b border-border/20 hover:bg-primary/5 transition-colors group">
+          <tr
+            key={r.url + i}
+            className="border-b border-border/20 hover:bg-primary/5 transition-colors group"
+          >
             <td className="px-4 py-2.5 max-w-0">
-              <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors font-medium flex items-start gap-1.5">
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground hover:text-primary transition-colors font-medium flex items-start gap-1.5"
+              >
                 <span className="flex-1 line-clamp-1">{r.title}</span>
                 <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-60 mt-0.5" />
               </a>
-              {r.snippet && <p className="text-muted-foreground mt-0.5 line-clamp-2">{r.snippet}</p>}
+              {r.snippet && (
+                <p className="text-muted-foreground mt-0.5 line-clamp-2">{r.snippet}</p>
+              )}
             </td>
-            <td className="px-4 py-2.5 whitespace-nowrap"><span className="text-blue-400/80 font-mono">{r.domain}</span></td>
-            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">{r.date || '—'}</td>
+            <td className="px-4 py-2.5 whitespace-nowrap">
+              <span className="text-blue-400/80 font-mono">{r.domain}</span>
+            </td>
+            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">
+              {r.date || '—'}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -170,7 +213,7 @@ function FacebookTable({ results }: { results: FacebookResult[] }) {
               {r.snippet && <p className="text-muted-foreground mt-0.5 line-clamp-2">{r.snippet}</p>}
             </td>
             <td className="px-4 py-2.5 whitespace-nowrap"><span className="text-blue-600/80 font-mono">{r.group_name}</span></td>
-            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">{r.date || '—'}</td>
+            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">{r.date || '\u2014'}</td>
           </tr>
         ))}
       </tbody>
@@ -195,27 +238,47 @@ function TelegramTable({ results }: { results: TelegramResult[] }) {
       </thead>
       <tbody>
         {results.map((r, i) => (
-          <tr key={r.channel_url + i} className="border-b border-border/20 hover:bg-primary/5 transition-colors group">
+          <tr
+            key={r.channel_url + i}
+            className="border-b border-border/20 hover:bg-primary/5 transition-colors group"
+          >
             <td className="px-4 py-2.5 max-w-0">
-              <a href={r.channel_url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors font-medium flex items-start gap-1.5">
+              <a
+                href={r.channel_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground hover:text-primary transition-colors font-medium flex items-start gap-1.5"
+              >
                 <span className="flex-1 line-clamp-1">{r.channel_name || r.channel_url}</span>
                 <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-60 mt-0.5" />
               </a>
-              {r.snippet && <p className="text-muted-foreground mt-0.5 line-clamp-2">{r.snippet}</p>}
+              {r.snippet && (
+                <p className="text-muted-foreground mt-0.5 line-clamp-2">{r.snippet}</p>
+              )}
             </td>
             <td className="px-4 py-2.5 whitespace-nowrap">
-              <a href={r.channel_url} target="_blank" rel="noopener noreferrer" className="text-sky-400/80 hover:text-sky-400 font-mono transition-colors">
+              <a
+                href={r.channel_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-400/80 hover:text-sky-400 font-mono transition-colors"
+              >
                 {r.channel_url.replace('https://', '')}
               </a>
             </td>
             <td className="px-4 py-2.5 text-right whitespace-nowrap">
               {r.views != null ? (
-                <span className="flex items-center justify-end gap-1 text-muted-foreground"><Eye className="w-3 h-3" />{r.views.toLocaleString()}</span>
+                <span className="flex items-center justify-end gap-1 text-muted-foreground">
+                  <Eye className="w-3 h-3" />
+                  {r.views.toLocaleString()}
+                </span>
               ) : (
                 <span className="text-muted-foreground/40">—</span>
               )}
             </td>
-            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">{r.date || '—'}</td>
+            <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground font-mono">
+              {r.date || '—'}
+            </td>
           </tr>
         ))}
       </tbody>

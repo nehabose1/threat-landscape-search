@@ -6,7 +6,7 @@ export async function getDeadUrls(
   urls: string[],
   timeoutMs = 3000
 ): Promise<Set<string>> {
-  const unique = [...new Set(urls)];
+  const unique = Array.from(new Set(urls));
   const dead = new Set<string>();
 
   const checks = unique.map(async (url) => {

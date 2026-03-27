@@ -3,10 +3,11 @@ import { searchReddit } from './sources/reddit';
 import { searchGoogle } from './sources/google';
 import { searchFacebook } from './sources/facebook';
 import { searchTelegram } from './sources/telegram';
+import { searchYouTube } from './sources/youtube';
 import { synthesizeResults } from './sources/synthesize';
 import { getDeadUrls } from './urlValidator';
 import { expandQuery } from './marketKeywords';
-import type { Market, SearchResult, SearchMetadata, RedditResult, GoogleResult, FacebookResult, TelegramResult } from '../shared/searchTypes';
+import type { Market, SearchResult, SearchMetadata, RedditResult, GoogleResult, FacebookResult, TelegramResult, YouTubeResult } from '../shared/searchTypes';
 
 /**
  * Registers GET /api/search as an SSE endpoint.
@@ -46,17 +47,19 @@ export function registerSearchRoute(app: Express) {
     send('status', { source: 'google', status: 'searching' });
     send('status', { source: 'facebook', status: 'searching' });
     send('status', { source: 'telegram', status: 'searching' });
+    send('status', { source: 'youtube', status: 'searching' });
 
     const succeeded: string[] = [];
     const failed: string[] = [];
 
-    // Step 2: Run all four sources in parallel
-    const [redditSettled, googleSettled, facebookSettled, telegramSettled] =
+    // Step 2: Run all five sources in parallel
+    const [redditSettled, googleSettled, facebookSettled, telegramSettled, youtubeSettled] =
       await Promise.allSettled([
         searchReddit(query, market),
         searchGoogle(expandedQueries),
         searchFacebook(expandedQueries),
         searchTelegram(query, market),
+        searchYouTube(query, market),
       ]);
 
     // Collect raw results
@@ -68,11 +71,14 @@ export function registerSearchRoute(app: Express) {
       facebookSettled.status === 'fulfilled' ? facebookSettled.value : [];
     let telegramResults: TelegramResult[] =
       telegramSettled.status === 'fulfilled' ? telegramSettled.value : [];
+    let youtubeResults: YouTubeResult[] =
+      youtubeSettled.status === 'fulfilled' ? youtubeSettled.value : [];
 
     if (redditSettled.status === 'rejected') failed.push('reddit');
     if (googleSettled.status === 'rejected') failed.push('google');
     if (facebookSettled.status === 'rejected') failed.push('facebook');
     if (telegramSettled.status === 'rejected') failed.push('telegram');
+    if (youtubeSettled.status === 'rejected') failed.push('youtube');
 
     // Step 3: Validate URLs — exclude dead links (404/410/451)
     const allUrls: string[] = [
@@ -80,6 +86,7 @@ export function registerSearchRoute(app: Express) {
       ...googleResults.map((r) => r.url),
       ...facebookResults.map((r) => r.url),
       ...telegramResults.map((r) => r.channel_url),
+      ...youtubeResults.map((r) => r.url),
     ];
 
     if (allUrls.length > 0) {
@@ -91,6 +98,7 @@ export function registerSearchRoute(app: Express) {
         googleResults = googleResults.filter((r) => !deadUrls.has(r.url));
         facebookResults = facebookResults.filter((r) => !deadUrls.has(r.url));
         telegramResults = telegramResults.filter((r) => !deadUrls.has(r.channel_url));
+        youtubeResults = youtubeResults.filter((r) => !deadUrls.has(r.url));
 
         send('status', {
           source: 'validation',
@@ -142,6 +150,15 @@ export function registerSearchRoute(app: Express) {
       send('status', { source: 'telegram', status: 'failed', error: String(telegramSettled.reason) });
     }
 
+    if (youtubeSettled.status === 'fulfilled') {
+      allResults.push(...youtubeResults);
+      succeeded.push('youtube');
+      send('status', { source: 'youtube', status: 'done', count: youtubeResults.length });
+      send('results', { source: 'youtube', results: youtubeResults });
+    } else {
+      send('status', { source: 'youtube', status: 'failed', error: String(youtubeSettled.reason) });
+    }
+
     // Step 5: Synthesize results
     send('status', { source: 'synthesis', status: 'searching' });
     let synthesis;
@@ -160,7 +177,7 @@ export function registerSearchRoute(app: Express) {
       market,
       timestamp: new Date().toISOString(),
       expanded_queries: expandedQueries,
-      sources_searched: ['reddit', 'google', 'facebook', 'telegram'],
+      sources_searched: ['reddit', 'google', 'facebook', 'telegram', 'youtube'],
       sources_succeeded: succeeded,
       sources_failed: failed,
       total_results: allResults.length,

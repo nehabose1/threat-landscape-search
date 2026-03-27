@@ -89,7 +89,7 @@ export function expandQuery(baseQuery: string, market: Market): string[] {
     }
   }
 
-  return [...new Set(expanded)];
+  return Array.from(new Set(expanded));
 }
 
 /**
@@ -98,5 +98,14 @@ export function expandQuery(baseQuery: string, market: Market): string[] {
 export function telegramMarketTerms(market: Market): string[] {
   if (market === 'vietnam') return ['vietnam', 'viet', 'vn'];
   if (market === 'brazil') return ['brazil', 'brasil', 'br'];
+  return [];
+}
+
+/**
+ * Returns extra YouTube search terms for a given market.
+ */
+export function youtubeMarketTerms(market: Market): string[] {
+  if (market === 'vietnam') return ['tiếng việt', 'hướng dẫn'];
+  if (market === 'brazil') return ['português', 'tutorial'];
   return [];
 }

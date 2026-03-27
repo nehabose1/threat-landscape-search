@@ -23,6 +23,11 @@ export async function synthesizeResults(
       return `[${idx}][Google] "${r.title}" ${r.domain} URL:${r.url} — ${r.snippet.slice(0, 200)}`;
     } else if (r.source === 'facebook') {
       return `[${idx}][Facebook] "${r.title}" ${r.group_name} URL:${r.url} — ${r.snippet.slice(0, 200)}`;
+    } else if (r.source === 'youtube') {
+      const transcriptNote = r.transcript_excerpt
+        ? ` TRANSCRIPT: ${r.transcript_excerpt.slice(0, 400)}`
+        : '';
+      return `[${idx}][YouTube] "${r.title}" channel:${r.channel} duration:${r.duration} URL:${r.url} — ${r.snippet.slice(0, 200)}${transcriptNote}`;
     } else {
       return `[${idx}][Telegram] "${r.channel_name}" URL:${r.channel_url} — ${r.snippet.slice(0, 200)}`;
     }
@@ -31,7 +36,7 @@ export async function synthesizeResults(
   // Extract search keywords for Reddit relevance filtering
   const searchKeywords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
 
-  const prompt = `You are Watson — a diligent, thorough field researcher supporting a UX researcher investigating cybersecurity threats. You are methodical and always flag uncertainty. A researcher searched for "${query}" across Reddit, Google, Facebook Groups, and Telegram.
+  const prompt = `You are Watson — a diligent, thorough field researcher supporting a UX researcher investigating cybersecurity threats. You are methodical and always flag uncertainty. A researcher searched for "${query}" across Reddit, Google, Facebook Groups, Telegram, and YouTube.
 
 Here are the ${summaries.length} results found (each prefixed with an index number and URL):
 
@@ -73,7 +78,7 @@ KEY INSIGHTS RULES:
 - If fewer than 5 distinct insights exist, include what you have and note thin coverage
 
 CATEGORY RULES:
-- Group by source TYPE: Security Vendor & Research Reports, Open-Source Tools (GitHub), Reddit Community Discussions, Telegram Channel Documentation, Facebook Group Activity
+- Group by source TYPE: Security Vendor & Research Reports, Open-Source Tools (GitHub), Reddit Community Discussions, Telegram Channel Documentation, Facebook Group Activity, YouTube Tutorials & Demonstrations
 - Only include categories that have matching results. Skip empty ones.
 - Maximum 8 items per category. Rank by reliability + relevance, keep the best.
 

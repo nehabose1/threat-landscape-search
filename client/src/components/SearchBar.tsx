@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, Loader2, Globe, Flag } from 'lucide-react';
+import { SourceInfoPopover } from '@/components/SourceInfoPopover';
 
 const EXAMPLE_CHIPS = [
   'passkey bypass phishing kit 2025 2026',
@@ -46,7 +47,7 @@ export function SearchBar({
   return (
     <div className="max-w-3xl mx-auto space-y-3">
       {/* Search input row */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
@@ -89,6 +90,9 @@ export function SearchBar({
             </SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Info popover */}
+        <SourceInfoPopover />
 
         {/* Search button */}
         <Button
